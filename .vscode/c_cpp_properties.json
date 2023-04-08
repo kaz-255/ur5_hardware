@@ -1,0 +1,28 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/rosuser/ur5_hardware/devel/include/**",
+        "/opt/ros/melodic/include/**",
+        "/home/rosuser/ur5_hardware/src/Universal_Robots_ROS_Driver/Universal_Robots_ROS_passthrough_controllers/include/**",
+        "/home/rosuser/ur5_hardware/src/Universal_Robots_ROS_Driver/scaled_joint_trajectory_controller/include/**",
+        "/home/rosuser/ur5_hardware/src/Universal_Robots_ROS_Driver/speed_scaling_interface/include/**",
+        "/home/rosuser/ur5_hardware/src/Universal_Robots_ROS_Driver/speed_scaling_state_controller/include/**",
+        "/home/rosuser/ur5_hardware/src/Universal_Robots_ROS_Driver/ur_calibration/include/**",
+        "/home/rosuser/ur5_hardware/src/universal_robot/ur_kinematics/include/**",
+        "/home/rosuser/ur5_hardware/src/Universal_Robots_ROS_Driver/ur_robot_driver/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}

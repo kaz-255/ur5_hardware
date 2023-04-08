@@ -1,0 +1,8 @@
+prefix=/home/rosuser/ur5_hardware/install
+
+Name: python_run
+Description: Description of python_run
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

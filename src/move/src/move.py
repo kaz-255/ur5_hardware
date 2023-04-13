@@ -42,7 +42,9 @@
 ##
 ## We also import `rospy`_ and some messages that we will use:
 ##
+import typing
 import time
+import math
 import sys
 import copy
 import rospy
@@ -188,7 +190,6 @@ class MoveGroupPythonIntefaceTutorial(object):
     # we use the class variable rather than the copied state variable
     current_joints = self.group.get_current_joint_values()
     return all_close(joint_goal, current_joints, 0.01)
-
   def go_to_pose_goal(self,x,y,z):
     # Copy class variables to local variables to make the web tutorials more clear.
     # In practice, you should use the class variables directly unless you have a good
@@ -229,6 +230,80 @@ class MoveGroupPythonIntefaceTutorial(object):
     return all_close(pose_goal, current_pose, 0.01)
 
 
+
+  def go_to_pose_goal(self,x,y,z):
+    # Copy class variables to local variables to make the web tutorials more clear.
+    # In practice, you should use the class variables directly unless you have a good
+    # reason not to.
+    group = self.group
+
+    ## BEGIN_SUB_TUTORIAL plan_to_pose
+    ##
+    ## Planning to a Pose Goal
+    ## ^^^^^^^^^^^^^^^^^^^^^^^
+    ## We can plan a motion for this group to a desired pose for the
+    ## end-effector:
+    #line = raw_input("Please input goal position(x,y,z):")
+    #goal_x, goal_y, goal_z = (float(x) for x in line.split(' '))
+    goal_x, goal_y, goal_z = x,y,z
+
+    pose_goal = geometry_msgs.msg.Pose()
+    pose_goal.orientation.w = -1.0
+    pose_goal.position.x = goal_x
+    pose_goal.position.y = goal_y
+    pose_goal.position.z = goal_z
+    group.set_pose_target(pose_goal)
+
+    ## Now, we call the planner to compute the plan and execute it.
+    plan = group.go(wait=True)
+    # Calling `stop()` ensures that there is no residual movement
+    group.stop()
+    # It is always good to clear your targets after planning with poses.
+    # Note: there is no equivalent function for clear_joint_value_targets()
+    group.clear_pose_targets()
+
+    ## END_SUB_TUTORIAL
+
+    # For testing:
+    # Note that since this section of code will not be included in the tutorials
+    # we use the class variable rather than the copied state variable
+    current_pose = self.group.get_current_pose().pose
+    return all_close(pose_goal, current_pose, 0.01)
+  
+  def plan_cartesian_path_mod(self, scale=1, x=0, y=0, z=0):
+    # Copy class variables to local variables to make the web tutorials more clear.
+    # In practice, you should use the class variables directly unless you have a good
+    # reason not to.
+    group = self.group
+
+    ## BEGIN_SUB_TUTORIAL plan_cartesian_path
+    ##
+    ## Cartesian Paths
+    ## ^^^^^^^^^^^^^^^
+    ## You can plan a Cartesian path directly by specifying a list of waypoints
+    ## for the end-effector to go through:
+    ##
+    waypoints = []
+
+    wpose = group.get_current_pose().pose
+    wpose.position.z += z* 0.1  # First move up (z)
+    wpose.position.x += x* 0.1  # Second move forward/backwards in (x)
+    wpose.position.y += y* 0.1  # Third move sideways (y)
+    waypoints.append(copy.deepcopy(wpose))
+
+    # We want the Cartesian path to be interpolated at a resolution of 1 cm
+    # which is why we will specify 0.01 as the eef_step in Cartesian
+    # translation.  We will disable the jump threshold by setting it to 0.0 disabling:
+    (plan, fraction) = group.compute_cartesian_path(
+                                       waypoints,   # waypoints to follow
+                                       0.01,        # eef_step
+                                       0.0)         # jump_threshold
+
+    # Note: We are just planning, not asking move_group to actually move the robot yet:
+    return plan, fraction
+
+    ## END_SUB_TUTORIAL
+
   def plan_cartesian_path(self, scale=1):
     # Copy class variables to local variables to make the web tutorials more clear.
     # In practice, you should use the class variables directly unless you have a good
@@ -246,7 +321,6 @@ class MoveGroupPythonIntefaceTutorial(object):
 
     wpose = group.get_current_pose().pose
     wpose.position.z += scale * 0.1  # First move up (z)
-    wpose.position.y += scale * 0.2  # and sideways (y)
     waypoints.append(copy.deepcopy(wpose))
 
     wpose.position.x += scale * 0.1  # Second move forward/backwards in (x)
@@ -352,7 +426,19 @@ class MoveGroupPythonIntefaceTutorial(object):
     # If we exited the while loop without returning then we timed out
     return False
     ## END_SUB_TUTORIAL
+tutorial = MoveGroupPythonIntefaceTutorial()
 
+def coordlist_to_movement(coord):
+    x_0, y_0, z_0 = 0, 0, 0
+    for id, item in enumerate(coord):
+      x_goal, y_goal, z_goal = item[0],item[1], item[2]
+      x_delta, y_delta, z_delta = x_goal-x_0, y_goal-y_0, z_goal-z_0
+      print('ID:', id)     
+      print('next movement:',  x_delta, y_delta, z_delta)    
+      master_plan, fraction= tutorial.plan_cartesian_path_mod(scale=-1, x= x_delta, y= y_delta, z =z_delta)
+      tutorial.execute_plan(master_plan)
+      x_0, y_0, z_0 = x_goal, y_goal, z_goal
+    return None
 
 def main():
   try:
@@ -361,10 +447,10 @@ def main():
 
     #forward control
     # input range: (-180,180)
-    print "============ Press `Enter` to execute a movement using a joint state goal ..."
-    time.sleep(1)
-    # raw_input()
-    tutorial.go_to_joint_state(30,-30,30,0,0,0)
+    # print "============ Press `Enter` to execute a movement using a joint state goal ..."
+    # time.sleep(1)
+    # # raw_input()
+    # tutorial.go_to_joint_state(30,-30,30,0,0,0)
 
     # print "============ Press `Enter` to execute a movement using a joint state goal ..."
     # raw_input()
@@ -380,8 +466,6 @@ def main():
 
     # print "============ Press `Enter` to execute a movement using a joint state goal ..."
     # raw_input()
-    # tutorial.go_to_joint_state(0,0,0,0,0,60)
-
     #inverse  control
     #end-effector origin (0,0,0.98)
     # print "============ Press `Enter` to execute a movement using a pose goal ..."
@@ -391,27 +475,100 @@ def main():
 
     print "============ Press `Enter` to execute a movement using a pose goal ..."
     # raw_input()
-    raw_input()
-    tutorial.go_to_pose_goal(0.5, 0.5 ,0.5)
+    # raw_input()
+    # tutorial.go_to_pose_goal(0.0, 0.5 ,0.5)
     print("Position 1")
+    tutorial.go_to_joint_state(270, -60,120,-57,90,0)
     
 
-    print "============ Press `Enter` to execute a movement using a pose goal ..."
+    print "============ Press `Enter` to Go to start position of the Motion path."
     # raw_input()
     raw_input()
-    tutorial.go_to_pose_goal(0.5,-0.5,0.7)
+    tutorial.go_to_pose_goal(-0.3,-0.5,0.6)
+    # p = 1
+    # z = 0.5
+    distance_cm = 15
+    resolution_per_cm = 0.01
+    # for l in range(1):
+    #   for i in range(int(distance_cm*100*resolution_per_cm)):
+    #     z = z+p*resolution_per_cm
+    #     tutorial.go_to_pose_goal(0.1,-0.5, z)
+    #     print(z)
+    #   print("Step" ,l , "completed!")
+    #   p = p*-1
+    print('motion successful')
     time.sleep(1)
-    print("Position 2")
+    print("Start Position")
     
 
     print "============ Press `Enter` to execute a movement using a cartesian ..."
     # raw_input()
     raw_input()
-    master_plan = tutorial.plan_cartesian_path(2)
-    time.sleep(1)
-    print("Position 2")
+    # master_plan, fraction= tutorial.plan_cartesian_path(scale=-1)
+    print('drawing H')
+    coordinates_H = [[0, 0, 0], 
+                   [0, 0, 2], 
+                   [0, 0, 1], 
+                   [2, 0, 1], 
+                   [2, 0, 2],
+                   [2, 0, 0]]
+    coordlist_to_movement(coordinates_H)
+    coordlist_to_movement([[0.5, 0, 0]])
+    print('drawing K')
+    coordinates_K = [[0, 0, 0], 
+                   [0, 0, 2], 
+                   [0, 0, 1], 
+                   [1, 0, 1], 
+                   [2, 0, 0],
+                   [1, 0, 1], 
+                   [2, 0, 2]] 
+    coordlist_to_movement([[0.5, 0, 0]])
+    coordlist_to_movement(coordinates_K)
+    print('drawing U')
+    coordinates_U = [[0, 0, 0],
+                   [0, 0, -1], 
+                   [(1+math.cos(math.radians(202.5))),       0, (-1 +math.sin(math.radians(202.5)))],   
+                   [1+math.cos(math.radians(225)),         0, -1 +math.sin(math.radians(225))],   
+                   [1+math.cos(math.radians(247.5)),    0, -1 +math.sin(math.radians(247.5))], 
+                   [1, 0, -2], 
+                   [1+math.cos(math.radians(292.5)),     0, -1 +math.sin(math.radians(292.5))], 
+                   [1+math.cos(math.radians(315)),       0, -1 + math.sin(math.radians(315))], 
+                   [1+math.cos(math.radians(337.5)),       0, -1 + math.sin(math.radians(337.5))], 
+                   [2, 0, -1], 
+                   [2, 0, 0]] 
+    coordlist_to_movement([[0.5, 0, 0]])
+    coordlist_to_movement(coordinates_U)
+    
+    print "============ Press `Enter` to go back to start position ..."
+ 
+    raw_input()
+    tutorial.go_to_joint_state(270, -60,120,-57,90,0)
 
-    tutorial.execute_plan(master_plan)
+    
+
+
+
+    # for id, item in enumerate(coordinates_):
+    #   x_goal, y_goal, z_goal = item[0],item[1], item[2]
+    #   x_delta, y_delta, z_delta = x_goal-x_0, y_goal-y_0, z_goal-z_0
+    #   print('next movement:', x_delta, y_delta, z_delta)    
+    #   raw_input()
+
+    #   master_plan, fraction= tutorial.plan_cartesian_path_mod(scale=-1, x= x_delta, y= y_delta, z =z_delta)
+    #   tutorial.execute_plan(master_plan)
+    #   x_0, y_0, z_0 = x_goal, y_goal, z_goal
+      
+
+    # master_plan, fraction= tutorial.plan_cartesian_path_mod(scale=-1, x= 1, y= 0, z =0)
+    # print("Draw square")
+    # tutorial.execute_plan(master_plan)
+
+    # master_plan, fraction= tutorial.plan_cartesian_path_mod(scale=-1, x= 0, y= 0, z =1)
+    # tutorial.execute_plan(master_plan)
+    # master_plan, fraction= tutorial.plan_cartesian_path_mod(scale=-1, x= -1, y= 0, z =0)
+    # tutorial.execute_plan(master_plan)
+    # master_plan, fraction= tutorial.plan_cartesian_path_mod(scale=-1, x= 0, y= 0, z =-1)
+    # tutorial.execute_plan(master_plan)
 
     # print "============ Press `Enter` to execute a movement using a pose goal ..."
     # # raw_input()
@@ -421,7 +578,7 @@ def main():
     
     print "============ Press `Enter` to reset"
     raw_input()
-    tutorial.go_to_joint_state(30,-30,0,0,0,0)
+    # tutorial.go_to_joint_state(30,-30,0,0,0,0)
 
   except rospy.ROSInterruptException:
     return

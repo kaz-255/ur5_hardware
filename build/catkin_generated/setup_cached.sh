@@ -7,10 +7,4 @@
 # new environment variables
 
 # modified environment variables
-export CMAKE_PREFIX_PATH="/home/rosuser/ur5_hardware/devel:$CMAKE_PREFIX_PATH"
-export LD_LIBRARY_PATH="/home/rosuser/ur5_hardware/devel/lib:$LD_LIBRARY_PATH"
-export PKG_CONFIG_PATH="/home/rosuser/ur5_hardware/devel/lib/pkgconfig:$PKG_CONFIG_PATH"
 export PWD='/home/rosuser/ur5_hardware/build'
-export PYTHONPATH="/home/rosuser/ur5_hardware/devel/lib/python2.7/dist-packages:$PYTHONPATH"
-export ROSLISP_PACKAGE_DIRECTORIES='/home/rosuser/ur5_hardware/devel/share/common-lisp'
-export ROS_PACKAGE_PATH="/home/rosuser/ur5_hardware/src:$ROS_PACKAGE_PATH"

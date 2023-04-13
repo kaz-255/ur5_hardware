@@ -204,5 +204,6 @@ include_directories(
 # catkin_add_nosetests(test)
 
 add_executable(move src/move.py)
+add_executable(move src/move2.py)
 target_link_libraries(move ${catkin_LIBRARIES})
 

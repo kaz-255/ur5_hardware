@@ -2,4 +2,4 @@
 source_root_dir = '/home/rosuser/ur5_hardware/src'
 whitelisted_packages = ''.split(';') if '' != '' else []
 blacklisted_packages = ''.split(';') if '' != '' else []
-underlay_workspaces = '/opt/ros/melodic'.split(';') if '/opt/ros/melodic' != '' else []
+underlay_workspaces = '/home/rosuser/ur5_hardware/devel;/opt/ros/melodic'.split(';') if '/home/rosuser/ur5_hardware/devel;/opt/ros/melodic' != '' else []
